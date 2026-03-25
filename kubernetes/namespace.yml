@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: django-prod
+
+
+---
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: django-resource-quota
+  namespace: django-prod
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+
+---
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: django-limit-range
+  namespace: django-prod
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "250m"
+      memory: "256Mi"
+    type: Container

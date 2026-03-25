@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: django-prod
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: django-resource-quota
+  namespace: django-prod
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "3"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: django-limit-range
+  namespace: django-prod
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      type: Container
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: django-prod
+type: Opaque
+stringData:
+  POSTGRES_DB: devopsdb
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+
+# ❌ PV should NOT have namespace
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  storageClassName: ""        # 🔥 MUST match PVC
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data/postgres
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: django-prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""        # 🔥 VERY IMPORTANT
+  volumeName: postgres-pv     # 🔥 bind to your PV
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: django-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "250m"
+              memory: "512Mi"
+
+      # ✅ FIXED indentation (VERY IMPORTANT)
+      volumes:
+        - name: postgres-storage
+          #hostPath:
+          #path: /home/raj/data 
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: django-prod
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
