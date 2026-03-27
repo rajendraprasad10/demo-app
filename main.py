@@ -5,6 +5,18 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Note
+import json
+import redis.asyncio as redis
+import os 
+
+
+
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST'),
+    port=int(os.getenv('REDIS_PORT')),
+    decode_responses=True
+)
+
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -25,21 +37,29 @@ def get_db():
         db.close()
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
-    notes = db.query(Note).all()
+    cached_notes = await redis_client.get("notes")
+    if cached_notes:
+        notes = json.loads(cached_notes)
+    else:
+        notes = db.query(Note).all()
+        
+        # convert SQLAlchemy objects to dict
+        notes = [{"id": n.id, "content": n.content} for n in notes]
+
+        await redis_client.set("notes", json.dumps(notes), ex=60)  # cache 60 sec
 
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",   # MUST be string
+        context = {
             "channel_name": "DevOps Rajendra",
             "description": "Learn Docker, Kubernetes, AWS, DevOps & Python in Telugu.",
             "author": "Rajendra Taidala",
             "notes": notes
-        },
+        }
     )
-
 
 @app.post("/add", response_class=HTMLResponse)
 async def add_note(
@@ -51,11 +71,16 @@ async def add_note(
     db.add(new_note)
     db.commit()
 
+    # ❗ invalidate cache
+    await redis_client.delete("notes")
+    
     notes = db.query(Note).all()
+    #notes = [{"id": n.id, "content": n.content} for n in notes_db]
 
     return templates.TemplateResponse(
-        "index.html",
-        {
+        request=request,
+        name="index.html",
+        context = {
             "request": request,
             "channel_name": "DevOps Rajendra",
             "description": "Learn Docker, Kubernetes, AWS, DevOps & Python in Telugu.",

@@ -11,7 +11,7 @@
     <h1>{{ channel_name }}</h1>
     <p>{{ description }}</p>
     <p><b>Author:</b> {{ author }}</p>
-
+    
     <hr>
 
     <h2>Add Note</h2>
@@ -21,12 +21,13 @@
     </form>
 
     <h2>Stored Notes</h2>
+    
     <ul>
         {% for note in notes %}
             <li>{{ note.content }}</li>
         {% endfor %}
     </ul>
-
+    
     <div class="footer">
         🚀 Built with FastAPI + PostgreSQL + Docker  
         | DevOps Rajendra Channel

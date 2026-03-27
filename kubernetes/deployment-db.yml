@@ -75,17 +75,20 @@ spec:
   storageClassName: ""        # 🔥 VERY IMPORTANT
   volumeName: postgres-pv     # 🔥 bind to your PV
 
+
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: postgres
   namespace: django-prod
 spec:
+  serviceName: postgres   # Headless service name (IMPORTANT)
   replicas: 1
   selector:
     matchLabels:
       app: postgres
+
   template:
     metadata:
       labels:
@@ -96,9 +99,11 @@ spec:
           image: postgres:15
           ports:
             - containerPort: 5432
+
           envFrom:
             - secretRef:
                 name: postgres-secret
+
           env:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
@@ -106,6 +111,7 @@ spec:
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
+
           resources:
             requests:
               cpu: "250m"
@@ -114,21 +120,83 @@ spec:
               cpu: "250m"
               memory: "512Mi"
 
-      # ✅ FIXED indentation (VERY IMPORTANT)
-      volumes:
-        - name: postgres-storage
-          #hostPath:
-          #path: /home/raj/data 
-          persistentVolumeClaim:
-            claimName: postgres-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: postgres
+#   namespace: django-prod
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: postgres
+#   template:
+#     metadata:
+#       labels:
+#         app: postgres
+#     spec:
+#       containers:
+#         - name: postgres
+#           image: postgres:15
+#           ports:
+#             - containerPort: 5432
+#           envFrom:
+#             - secretRef:
+#                 name: postgres-secret
+#           env:
+#             - name: PGDATA
+#               value: /var/lib/postgresql/data/pgdata
+
+#           volumeMounts:
+#             - name: postgres-storage
+#               mountPath: /var/lib/postgresql/data
+#           resources:
+#             requests:
+#               cpu: "250m"
+#               memory: "512Mi"
+#             limits:
+#               cpu: "250m"
+#               memory: "512Mi"
+
+#       # ✅ FIXED indentation (VERY IMPORTANT)
+#       volumes:
+#         - name: postgres-storage
+#           #hostPath:
+#           #path: /home/raj/data 
+#           persistentVolumeClaim:
+#             claimName: postgres-pvc
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: postgres-service
+#   namespace: django-prod
+# spec:
+#   selector:
+#     app: postgres
+#   ports:
+#     - port: 5432
+#       targetPort: 5432
 
 ---
+# create a headless service for the StatefulSet
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres-service
   namespace: django-prod
 spec:
+  clusterIP: None   # Headless
   selector:
     app: postgres
   ports:
