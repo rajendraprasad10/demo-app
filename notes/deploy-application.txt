@@ -1,0 +1,94 @@
+What is HPA?
+Automatically scales pods up/down
+
+Based on metrics like:
+	CPU (most common)
+	Memory
+	Custom metrics (Prometheus)
+	🔹 1. Prerequisites ⚠
+
+
+Install Metrics Server (MANDATORY)
+
+HPA depends on resource metrics.
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+	
+	Verify:
+
+		kubectl get deployment metrics-server -n kube-system
+		kubectl top nodes
+		kubectl top pods -n dev
+
+
+
+
+
+run this commands in linux to encode the passwords and APIKeys 
+
+echo -n "postgres" | base64
+
+
+
+1. Apply All Resources
+
+kubectl apply -f dev-app.yaml
+
+
+2. Verify Resources
+
+kubectl get all -n dev
+
+3. Check Pods
+
+kubectl get pods -n dev
+kubectl describe pod <pod-name> -n dev
+
+4. Check Logs
+
+kubectl logs <pod-name> -c fastapi-container -n dev
+kubectl logs <pod-name> -c writer-sidecar -n dev
+
+5. Check Init Container
+kubectl logs <pod-name> -c wait-for-postgres -n dev
+
+
+6. Access Application
+kubectl get nodes -o wide
+
+Open:
+
+http://<NodeIP>:30080
+7. Test Inside Cluster
+
+
+kubectl exec -it <pod-name> -n dev -- sh
+
+Test Redis:
+
+nc -zv redis 6379
+--------------------------------------------------------
+
+8. Check HPA
+
+kubectl get hpa -n dev
+
+
+generate load and test it 
+
+kubectl run -it --rm load-generator --image=busybox -- /bin/sh
+
+run this in contianer 
+
+while true; do wget -q -O- http://fastapi-service:8000; done     
+
+or 
+
+while true; do curl http://<NodeIP>:30080; done
+
+
+--------------------------------------------------------
+
+if HPA not configure properly then 
+
+set the calico network in kind cluster, 
