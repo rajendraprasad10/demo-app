@@ -1,0 +1,28 @@
+How to Apply (Commands)
+
+cd /local-manifest-files
+
+
+Step 1: Apply All Resources
+
+	kubectl apply -f dev-postgres.yml
+
+Step 2: Verify Resources
+	kubectl get all -n dev
+	kubectl get pvc -n dev
+	kubectl get pv
+
+
+Step 3: Check Pod Logs
+	kubectl logs postgres-0 -n dev
+
+Step 4: Exec into Pod
+	kubectl exec -it postgres-0 -n dev -- bash
+
+Step 5: Connect to DB
+	psql -U postgres -d devopsdb
+
+9. How App Connects to PostgreSQL
+	Inside Cluster:
+	DB_HOST = "postgres-service"
+	DB_PORT = 5432
