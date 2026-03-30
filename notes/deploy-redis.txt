@@ -1,0 +1,187 @@
+Redis on Kubernetes (Deployment + Service)
+🔹 1. What This YAML Does
+
+Creates a Redis Pod using Deployment
+
+Exposes Redis inside cluster using ClusterIP Service
+
+Runs Redis on port 6379
+
+🔹 2. Step-by-Step Commands 
+
+1. Save YAML File
+
+Note: Use this folder to /local-manifest-files 
+
+cd /local-manifest-files
+
+dev-redis.yaml
+
+Paste your YAML and save
+----------------------------------------------------------------
+
+2. Create Resources
+
+kubectl apply -f dev-redis.yaml
+Output:
+deployment.apps/redis created
+
+service/redis created
+----------------------------------------------------------------
+
+3. Verify Deployment
+
+kubectl get deployments -n dev
+
+👉 Expected:
+
+redis   1/1   Running
+
+----------------------------------------------------------------
+
+
+4. Check Pods
+
+kubectl get pods -n dev
+
+👉 Expected:
+
+redis-xxxxx   Running
+
+----------------------------------------------------------------
+
+5. Describe Pod (Debugging)
+kubectl describe pod <pod-name> -n dev
+
+----------------------------------------------------------------
+
+6. Check Logs
+kubectl logs <pod-name> -n dev
+
+----------------------------------------------------------------
+
+7. Verify Service
+kubectl get svc -n dev
+
+👉 Expected:
+
+redis   ClusterIP   10.x.x.x   6379/TCP
+
+----------------------------------------------------------------
+
+
+
+8. Test Connection (IMPORTANT)
+Option 1: Exec into Pod
+kubectl exec -it <pod-name> -n dev -- redis-cli
+
+Then run:
+
+ping
+
+👉 Output:
+
+PONG
+Option 2: Test from Another Pod
+kubectl run test-pod --image=busybox -it --rm -- sh
+
+Inside pod:
+
+nc -zv redis 6379
+
+
+🔹 3. Key Concepts Explained 
+🔸 Deployment
+Purpose:
+  Runs and manages Redis Pod
+  Key Points:
+  Self-healing (restarts pod if it crashes)
+  Supports scaling
+  Rolling updates
+  🔸 Replica
+      replicas: 1
+  Only 1 Redis instance
+    No high availability
+
+  Good for dev/testing
+    🔸 Labels & Selectors
+
+    labels:
+      app: redis
+
+    selector:
+      app: redis
+
+Why important?
+
+Service finds Pods using labels
+
+If mismatch → Service won't work 
+
+🔸 Container Image
+
+image: redis:7-alpine
+
+Why alpine?
+  Lightweight
+  Faster startup
+
+  Less memory usage
+    🔸 Port
+  containerPort: 6379
+    Default Redis port
+      🔸 Resources
+requests:
+  limits:
+  Meaning:
+    Type	Description
+    requests	Minimum required
+    limits	Max allowed
+      🔸 Service (ClusterIP)
+            type: ClusterIP
+      What it does:
+          Exposes Redis inside cluster only
+          Provides stable DNS
+          🔸 Service DNS 
+
+
+----------------------------------------------------------------
+
+Your Redis can be accessed using:
+
+redis:6379
+
+OR full DNS:
+
+redis.dev.svc.cluster.local:6379
+🔹 4. Internal Flow 
+App Pod (FastAPI)
+      │
+      ▼
+Service (redis)
+      │
+      ▼
+Redis Pod
+
+---------------------------------------------------------------
+🔹 5. Important Commands Cheat Sheet 
+
+Task	Command
+Apply YAML	kubectl apply -f dev-redis.yaml
+
+Delete	kubectl delete -f dev-redis.yaml
+
+Get Pods	kubectl get pods -n dev
+
+Get Service	kubectl get svc -n dev
+
+Logs	kubectl logs <pod>
+
+Exec	kubectl exec -it <pod> -- sh
+
+----------------------------------------------------------------
+
+Service not working
+Check labels match
+
+kubectl get pods --show-labels
