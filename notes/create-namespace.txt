@@ -42,11 +42,12 @@ spec:
         cpu: "250m"
         memory: "256Mi"
       type: Container
-
+----------------------------------------------------------------
 Step 2: Apply configuration
 
 kubectl apply -f dev-namespace.yml
 
+-------------------------------------------------------
 Step 3: Verify Namespace
 
 kubectl get ns
@@ -54,14 +55,18 @@ kubectl get ns
 You should see:
 
 dev
+---------------------------------------------------------
+
 
 Step 4: Verify ResourceQuota
 
 kubectl get resourcequota -n dev
 
+
 Detailed view:
 
 kubectl describe resourcequota django-resource-quota -n dev
+--------------------------------------------------------------------------------
 
 Step 5: Verify LimitRange
 
@@ -72,12 +77,14 @@ Detailed view:
 kubectl describe limitrange django-limit-range -n dev
   Important Notes (VERY IMPORTANT for interviews)
   Namespace
-
+---------------------------------------------------------------------------------------------
 Logical isolation in Kubernetes
 All resources (pods, services) will be created inside dev
 
 🔹 ResourceQuota (Cluster Safety)
 
+
+-------------------------------------------------------------------------------------------
 Limits total resources in the namespace:
 
 Resource	Limit
@@ -96,6 +103,7 @@ Applies defaults when not specified in Pod:
 Type	CPU	Memory
 Request	250m	256Mi
 Limit	500m	512Mi
+
 
 👉 If developer doesn’t define resources → Kubernetes assigns these automatically
 
@@ -134,7 +142,7 @@ kubectl describe pod test-pod -n dev
 
 👉 You’ll see default CPU/memory applied from LimitRange
 
-
+-----------------------------------------------------------------------------------------------------------------------------------
 
 Pro Tips (DevOps / Interview)
 
