@@ -1,0 +1,35 @@
+Keep this kind-3node.yaml file follow below commands 
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30080   # NodePort
+    hostPort: 30080        # Your laptop port
+    protocol: TCP
+- role: worker
+- role: worker
+
+
+> kind create cluster --name dev --config kind-3node.yml
+
+> kind delete cluster --name dev
+
+> kind get clusters
+Kubectl get nodes
+
+set calico network 
+
+Apply Calico manifest
+
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.3/manifests/calico.yaml
+
+kubectl get pods -n kube-system
+
+kubectl get nodes
+
+-----------------------------------------------------------
+
+deploy this all manifest files 
+
+
