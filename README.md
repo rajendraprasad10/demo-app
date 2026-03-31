@@ -1,6 +1,6 @@
 # demo-app
 
-to deploy this application in cluster please the notes file to do 
+to deploy this application in cluster please follow notes folder steps
 
 
 and first check with create cluster in local 
