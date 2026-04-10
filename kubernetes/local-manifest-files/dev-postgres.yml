@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: dev
+type: Opaque
+stringData:
+  POSTGRES_DB: devopsdb
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+
+# PV should NOT have namespace
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  storageClassName: ""        # MUST match PVC
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data/postgres
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""        #  VERY IMPORTANT
+  volumeName: postgres-pv     # bind to your PV
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: dev
+spec:
+  serviceName: postgres   # Headless service name (IMPORTANT)
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          volumeMounts:
+            - name: mongonfsvol
+              mountPath: /var/lib/postgresql/data
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "250m"
+              memory: "512Mi"
+      volumes:
+        - name: mongonfsvol
+          nfs:
+            server: 18.60.211.27
+            path: /mnt/nfs_share
+
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: postgres-storage
+  #     spec:
+  #       accessModes: ["ReadWriteOnce"]
+  #       resources:
+  #         requests:
+  #           storage: 5Gi
+
+
+---
+# create a headless service for the StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: dev
+spec:
+  clusterIP: None   # Headless
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

@@ -1,0 +1,228 @@
+# configmaps for application pods  
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fastapi-config
+  namespace: dev
+data:
+  DB_HOST: postgres-service
+  DB_PORT: "5432" 
+  DB_NAME: devopsdb
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+
+
+# secrets for application pod 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fastapi-secret
+  namespace: dev
+type: Opaque
+data:
+  DB_USER: cG9zdGdyZXM=      # postgres
+  DB_PASSWORD: cG9zdGdyZXM=  # postgres
+
+
+
+# NetworkPolicy
+# redis pod only accepts traffic from fastapi-app pods on port 6379
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-fastapi-to-redis
+  namespace: dev
+spec:
+  podSelector:
+    matchLabels:
+      app: redis   # Apply policy to Redis pods
+
+  policyTypes:
+  - Ingress
+
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: fastapi-app   # Only FastAPI allowed
+    ports:
+    - protocol: TCP
+      port: 6379
+
+
+
+# app deployment 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-app
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fastapi-app
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+    spec:
+      # Wait for DB
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking PostgreSQL readiness..."
+
+              until pg_isready -h postgres-service -p 5432 -U postgres; do
+                echo "Postgres not ready yet..."
+                sleep 2
+              done
+
+              echo "Postgres is READY "
+      
+      
+      # application container config
+      containers:
+        # 🔹 Sidecar container (writes every 20 sec)
+        - name: writer-sidecar
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                echo "Log entry at $(date)" >> /data/log.txt;
+                sleep 20;
+              done
+
+        - name: fastapi-container
+          image: 906353/app2:v2.0.12   # use built image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          
+          env:
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: fastapi-config
+                  key: REDIS_HOST
+            
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: fastapi-config
+                  key: REDIS_PORT
+                  
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: fastapi-config
+                  key: DB_HOST
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: fastapi-config
+                  key: DB_PORT
+
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: fastapi-config
+                  key: DB_NAME
+
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fastapi-secret
+                  key: DB_USER
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fastapi-secret
+                  key: DB_PASSWORD
+          # ADD THIS
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          # Readiness Probe (when app is ready to serve traffic)
+          readinessProbe:
+            httpGet:
+              path: /health        # change if you have custom health endpoint
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          #  Liveness Probe (restart if app is stuck)
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+
+
+# HPA 
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fastapi-hpa
+  namespace: dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fastapi-app
+
+  minReplicas: 1
+  maxReplicas: 5
+
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 30
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60   # scale when CPU > 70%
+
+              
+
+# app service  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+  namespace: dev
+spec:
+  type: NodePort
+  selector:
+    app: fastapi-app
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30080
+
