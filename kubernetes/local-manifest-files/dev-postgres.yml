@@ -73,7 +73,7 @@ spec:
               value: /var/lib/postgresql/data/pgdata
 
           volumeMounts:
-            - name: mongonfsvol
+            - name:  postgres-storage
               mountPath: /var/lib/postgresql/data
 
           resources:
@@ -83,20 +83,20 @@ spec:
             limits:
               cpu: "250m"
               memory: "512Mi"
-      volumes:
-        - name: mongonfsvol
-          nfs:
-            server: 18.60.211.27
-            path: /mnt/nfs_share
+      # volumes:
+      #   - name: mongonfsvol
+      #     nfs:
+      #       server: 18.60.211.27
+      #       path: /mnt/nfs_share
 
-  # volumeClaimTemplates:
-  #   - metadata:
-  #       name: postgres-storage
-  #     spec:
-  #       accessModes: ["ReadWriteOnce"]
-  #       resources:
-  #         requests:
-  #           storage: 5Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
 
 
 ---

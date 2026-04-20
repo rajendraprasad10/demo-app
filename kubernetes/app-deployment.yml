@@ -1,3 +1,4 @@
+# configmaps for application pods  
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,7 +12,7 @@ data:
   REDIS_PORT: "6379"
 
 
-
+# secrets for application pod 
 ---
 apiVersion: v1
 kind: Secret
@@ -22,6 +23,8 @@ type: Opaque
 data:
   DB_USER: cG9zdGdyZXM=      # postgres
   DB_PASSWORD: cG9zdGdyZXM=  # postgres
+
+
 
 # NetworkPolicy
 # redis pod only accepts traffic from fastapi-app pods on port 6379
@@ -67,7 +70,7 @@ spec:
       labels:
         app: fastapi-app
     spec:
-      # 🔥 Wait for DB
+      # Wait for DB
       initContainers:
         - name: wait-for-postgres
           image: postgres:15
@@ -82,7 +85,7 @@ spec:
                 sleep 2
               done
 
-              echo "Postgres is READY ✅"
+              echo "Postgres is READY "
       
       
       # application container config
