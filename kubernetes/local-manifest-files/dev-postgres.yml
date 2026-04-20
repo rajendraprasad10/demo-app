@@ -11,18 +11,24 @@ stringData:
 
 # PV should NOT have namespace
 ---
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-pv
+  name: postgres-pv-0
 spec:
-  storageClassName: ""        # MUST match PVC
   capacity:
-    storage: 1Gi
+    storage: 5Gi   # MUST match StatefulSet
   accessModes:
     - ReadWriteOnce
+  storageClassName: ""   # important
+  persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: /mnt/data/postgres
+    path: /mnt/data/postgres-0
+
+  claimRef:
+    namespace: dev
+    name: postgres-storage-postgres-0   # VERY IMPORTANT
 
 ---
 apiVersion: v1
@@ -93,7 +99,9 @@ spec:
     - metadata:
         name: postgres-storage
       spec:
-        accessModes: ["ReadWriteOnce"]
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: ""   # IMPORTANT
         resources:
           requests:
             storage: 5Gi
