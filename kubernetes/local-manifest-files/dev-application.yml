@@ -102,7 +102,7 @@ spec:
               done
 
         - name: fastapi-container
-          image: 906353/app2:v2.0.2   # use built image
+          image: 906353/dr-app:v40   # use built image
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
