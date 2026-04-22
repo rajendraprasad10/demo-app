@@ -1,1 +1,27 @@
 
+name: First Workflow
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   #runs the workflow manually
+
+jobs:
+  basic-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Say Hello
+        run: echo "Hello from KK FUNDA"
+
+      - name: Show Linux version
+        run: uname -a
+
+      - name: List current directory
+        run: ls -ltr
+
+      - name: Print current user
+        run: whoami
+
+      - name: Print date and time
+        run: date
