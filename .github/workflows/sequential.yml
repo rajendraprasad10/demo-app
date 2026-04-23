@@ -1,0 +1,25 @@
+name: Sequential Jobs Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Step
+        run: echo "Building application"
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Test Step
+        run: echo "Running tests"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Deploy Step
+        run: echo "Deploying application"
