@@ -1,0 +1,33 @@
+name: Mixed Jobs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Build started"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Linting code"
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - run: echo "Running unit tests"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - run: echo "Running integration tests"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - run: echo "Starting deployment"
