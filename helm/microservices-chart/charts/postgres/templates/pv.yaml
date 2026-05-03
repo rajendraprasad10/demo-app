@@ -1,0 +1,17 @@
+# charts/service-c/templates/pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-0
+spec:
+  capacity:
+    storage: {{ .Values.storage }}
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/postgres-0
+  claimRef:
+    namespace: {{ .Values.global.namespace }}
+    name: postgres-storage-postgres-0

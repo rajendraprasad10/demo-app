@@ -1,0 +1,19 @@
+# values-dev.yaml
+global:
+  namespace: dev
+  environment: dev
+
+application:
+  replicaCount: 1
+  image:
+    tag: v40
+  hpa:
+    enabled: false        # No HPA in dev
+
+redis:
+  replicaCount: 1
+
+postgres:
+  storage: 2Gi            # Smaller storage in dev
+  credentials:
+    password: devpassword

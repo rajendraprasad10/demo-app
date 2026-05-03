@@ -1,0 +1,14 @@
+# charts/service-a/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: fastapi-app
+  ports:
+    - port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}
+      nodePort: {{ .Values.nodePort }}

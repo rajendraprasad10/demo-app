@@ -1,0 +1,13 @@
+# charts/service-c/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: {{ .Values.global.namespace }}
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}

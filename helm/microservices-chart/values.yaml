@@ -1,0 +1,74 @@
+# ── Global settings shared across all sub-charts ──
+global:
+  namespace: staging
+  environment: staging
+  imageRegistry: ""          # e.g. docker.io or your private registry
+
+# ── Enable/disable each service ──
+application:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: 906353/dr-app
+    tag: v40 
+    pullPolicy: IfNotPresent
+  port: 8000
+  nodePort: 30080
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    cpuUtilization: 60
+  probes:
+    readiness:
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      path: /health
+      initialDelaySeconds: 15
+      periodSeconds: 20
+
+redis:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: 7-alpine
+  port: 6379
+  disktype: ssd2
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+
+postgres:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: "15"
+  port: 5432
+  disktype: ssd
+  storage: 5Gi
+  credentials:
+    db: devopsdb
+    user: postgres
+    password: postgres
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "250m"
+      memory: "512Mi"

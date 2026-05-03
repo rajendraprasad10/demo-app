@@ -1,0 +1,20 @@
+# values-stage.yaml
+global:
+  namespace: staging
+  environment: staging
+
+application:
+  replicaCount: 2
+  image:
+    tag: v40
+  hpa:
+    enabled: true
+    maxReplicas: 3
+
+redis:
+  replicaCount: 1
+
+postgres:
+  storage: 5Gi
+  credentials:
+    password: postgres

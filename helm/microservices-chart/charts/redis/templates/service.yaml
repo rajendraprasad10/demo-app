@@ -1,0 +1,13 @@
+# charts/service-b/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.global.namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+    - port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}

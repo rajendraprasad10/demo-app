@@ -1,0 +1,23 @@
+apiVersion: v2
+name: microservices-chart
+description: Umbrella chart for FastAPI + Redis + PostgreSQL
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+# Declare sub-charts as dependencies
+dependencies:
+  - name: application
+    version: "0.1.0"
+    repository: "file://charts/application"   # local sub-chart
+    condition: application.enabled             # enable/disable per env
+
+  - name: redis
+    version: "0.1.0"
+    repository: "file://charts/redis"
+    condition: redis.enabled
+
+  - name: postgres
+    version: "0.1.0"
+    repository: "file://charts/postgres"
+    condition: postgres.enabled

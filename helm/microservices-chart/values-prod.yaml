@@ -1,0 +1,31 @@
+# values-prod.yaml
+global:
+  namespace: prod
+  environment: production
+
+application:
+  replicaCount: 3
+  image:
+    tag: v40
+  hpa:
+    enabled: true
+    maxReplicas: 10
+    cpuUtilization: 50
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+redis:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "512Mi"
+
+postgres:
+  storage: 20Gi           # Bigger storage in prod
+  credentials:
+    password: postgres

@@ -1,0 +1,13 @@
+# charts/service-a/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fastapi-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_NAME: {{ .Values.global.dbName | default "devopsdb" }}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  ENV: {{ .Values.global.environment }}
